@@ -10,3 +10,4 @@ Here is an equation to check it MathJax is working
 $$
 a^2 + b^2 = c^2
 $$
+did it work?
