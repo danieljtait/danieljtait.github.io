@@ -17,7 +17,7 @@ Given a set of observations $$\mathbf{X}$$ which we believe to have been generat
 
 $$
 \begin{bmatrix} x_{n+1} \\ y_{n+1} \end{bmatrix} = \exp\left(
-\begin{bmatrix} 0 & \int_{t_n}^{t_{n+1} \epsilon(t) \\
+\begin{bmatrix} 0 & \int_{t_n}^{t_{n+1}} \epsilon(t) \\
 0 & 0
 \end{bmatrix} \right)
 $$
