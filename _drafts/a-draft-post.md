@@ -45,5 +45,5 @@ In the case of the model we are currently considering the discussion above shows
 And common problem in time series models is the resampling of a new point $\mathbf{x}\_{i} $ conditional on points $\mathbf{x}\_{i-1} $ and $\mathbf{x}_{i+1} $ say, in which case the transformation group property of the rotation matrix - the fact that it is a one parameter semi-group allows us to that if
 
 $$
-R(\varphi) x_{i-1} = x_{i+1}, \mbox{ then } p(\theta_1, \theta_2 | ) = p(\theta_1, \theta_2 | \theta_1 + \theta_2 \, \mbox{mod} \, 2\pi = \varphi )
+R(\varphi) x_{i-1} = x_{i+1}, \mbox{ then } p(\theta_1, \theta_2 | \mathbf{x}_{i-1}, \mathbf{x}_{i+1} ) = p(\theta_1, \theta_2 | \theta_1 + \theta_2 \, \mbox{mod} \, 2\pi = \varphi )
 $$
