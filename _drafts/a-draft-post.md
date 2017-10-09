@@ -33,3 +33,10 @@ where $\mathcal{E}(t_{n}, t_{n+1})$ is the integrated Gaussian process, which is
 $$
 p(\mathcal{E}_1, \ldots, \mathcal{E}_n | \mathbf{X} ) \propto p(\mathcal{E}_1 =  \theta_1 + 2\pi k_1, \ldots ), \qquad k_i \in \mathbb{Z}
 $$
+
+it follows that the Kubo oscillator can be solved exactly.
+
+## Comparison with gradient matching
+A gradient matching approach would proceed by placing a gaussian process prior on the observed trajectories $\mathbf{x}$, in this instance however such a prior assumption is hard to justify - gradient matching therefore relies on the model data to correct for the the lost mathematical structure in adopting the significantly simplified prior.
+
+In the case of the model we are currently considering the discussion above shows that we can solve for the approporiate posterior so that exact inference can be achieved, on the otherhand we would like to have sufficiently flexible models to deal with situations in which this is no longer necessarily so, but we have reason to believe there is enough mathematical structure - such as a tendency for the data (not the data but the true trajectories) to concentrate on proper submanifolds of the embedding space - that we would like to develop models which capture some element of this structure while still allowing for practical inference.
