@@ -42,4 +42,4 @@ A gradient matching approach would proceed by placing a gaussian process prior o
 In the case of the model we are currently considering the discussion above shows that we can solve for the approporiate posterior so that exact inference can be achieved, on the otherhand we would like to have sufficiently flexible models to deal with situations in which this is no longer necessarily so, but we have reason to believe there is enough mathematical structure - such as a tendency for the data (not the data but the true trajectories) to concentrate on proper submanifolds of the embedding space - that we would like to develop models which capture some element of this structure while still allowing for practical inference.
 
 ## Missing data problem
-And common problem in time series models is the resampling of a new point $\mathbf{x}_i $ conditional on points $\mathbf{x_{i-1}} $ and $\mathbf{x}_{i+1} $ say.
+And common problem in time series models is the resampling of a new point $\mathbf{x}_{i} $ conditional on points $\mathbf{x_{i-1}} $ and $\mathbf{x}_{i+1} $ say.
