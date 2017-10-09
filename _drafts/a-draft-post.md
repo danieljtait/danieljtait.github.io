@@ -28,4 +28,4 @@ $$
 \end{align*}
 $$
 
-where $\mathcal{E}(t_{n}, t_{n+1})$ is the integrated Gaussian process, which is itself a Gaussian process. It follows that if $\mathbf{\theta} = \theta_1, \ldots, \theta_n$ is a sequence of angles $\theta \in [0,2\pi]$ such that $\mathbf{x}_i = \mathbf{x}_{i+1}$ then the posterior distribution of the Gaussian is supported over
+where $\mathcal{E}(t_{n}, t_{n+1})$ is the integrated Gaussian process, which is itself a Gaussian process. It follows that if $\mathbf{\theta} = \theta_1, \ldots, \theta_n$ is a sequence of angles $\theta \in [0,2\pi]$ such that
