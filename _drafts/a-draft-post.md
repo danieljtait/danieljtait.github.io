@@ -3,7 +3,7 @@ layout: post
 title: "Kubo Oscillator"
 ---
 
-Hello, world!
+In this post we introduce the *Kubo oscillator* as a representative example of what we shall term *multiplicative* latent Gaussian Process force models.
 
 Equation check:
 
