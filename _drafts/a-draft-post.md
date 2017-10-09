@@ -28,4 +28,4 @@ $$
 \end{align*}
 $$
 
-where $$\mathcal{E}(t_{n}, t_{n+1})$$ is the integrated Gaussian process, which is itself a Gaussian process.
+where $\mathcal{E}(t_{n}, t_{n+1})$ is the integrated Gaussian process, which is itself a Gaussian process.
