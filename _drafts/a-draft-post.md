@@ -22,8 +22,9 @@ $$
 -\int_{t_n}^{t_{n+1}} \epsilon(t) dt  & 0
 \end{bmatrix} \right)\begin{bmatrix} x_n \\ y_n \end{bmatrix}, \\
 &= \begin{bmatrix}
-\cos 
-\end{bmatrix}
+\cos \mathcal{E}(t_n,t_{n+1} ) & - \sin \mathcal{E}(t_n,t_{n+1} ) \\
+\sin \mathcal{E}(t_n,t_{n+1} ) & \cos \mathcal{E}(t_n,t_{n+1} )
+\end{bmatrix}\begin{bmatrix} x_n \\ y_n \end{bmatrix}, \\
 \end{align*}
 $$
 
