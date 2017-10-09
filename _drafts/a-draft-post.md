@@ -31,5 +31,5 @@ $$
 where $\mathcal{E}(t_{n}, t_{n+1})$ is the integrated Gaussian process, which is itself a Gaussian process. It follows that if $\mathbf{\theta} = \theta_1, \ldots, \theta_n$ is a sequence of angles $\theta \in [0,2\pi]$ such that $R(\theta_i) x_{i} = x_{i+1}$ then the posterior of $\mathcal{E}_i$ is given by
 
 $$
-p(\mathcal{E}_1, \ldots, \mathcal{E}_n | \mathbf{x}_0 ) \propto p(\mathcal{E}_1 =  \theta_1 + 2\pi k_1, \ldots ), \qquad k_i \in \mathbb{Z}
+p(\mathcal{E}_1, \ldots, \mathcal{E}_n | \mathbf{X} ) \propto p(\mathcal{E}_1 =  \theta_1 + 2\pi k_1, \ldots ), \qquad k_i \in \mathbb{Z}
 $$
