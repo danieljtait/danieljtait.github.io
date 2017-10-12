@@ -7,7 +7,7 @@ title: Daniel Tait's Blog
   <ul>
     {% for post in site.posts %}
     <li>
-      {{ post.data | data_to_strig }}
+      {{ post.data | data_to_string }}
       <a href="{{ post.url }}" title="{{ post.title }}">{{post.title }}</a>
     </li>
     {% endfor %}
