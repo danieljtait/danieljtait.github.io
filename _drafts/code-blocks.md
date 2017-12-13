@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Kubo Oscillator"
+title: "Code Block"
 ---
 
 ```
