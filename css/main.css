@@ -61,3 +61,20 @@ ul.posts li {
 }
 
 
+.algo {
+    margin-left: 20px;
+    font-family: Consolas,Monaco,Lucida Console;
+    font-size: .8em;
+    border-bottom: 1px solid #d5d5d5;    
+}
+
+.algo ol {
+    margin-left: 20px;
+}
+
+.algo h1 {
+    border-bottom: 1px solid #d5d5d5;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #999
+}
