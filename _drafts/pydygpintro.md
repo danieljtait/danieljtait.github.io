@@ -22,7 +22,7 @@ pip install pydygp
 However in the short term cloning the the repository on github is probably advisable.
 
 
-### Features
+## Features
 As a near term goal I will be primarily focused on
 
 * (Additive) Linear latent force models
@@ -30,8 +30,8 @@ As a near term goal I will be primarily focused on
 
 Which will more or less takes this class of models right up to the current state of the art, but it is to be hoped this list continues to expand as the art progresses.
 
-### Further Info
+## Further Info
 I will be continuously updating the [documentation](https://pydygp.readthedocs.io/en/latest/) and in particular would point interested parties in the direction of the [user guide](https://pydygp.readthedocs.io/en/latest/user/index.html) and examples contained within.
 
-### Contribution
-The project is very much in its infancy but if you are interested in contributing anything from documentation, tutorials and examples or any relevant modules get in touch at <`package name`>`@gmail.com`.
+## Contribution
+The project is very much in its infancy but if you are interested in contributing anything from documentation, tutorials and examples or any relevant modules do get in touch at <`package name`>`@gmail.com`.
