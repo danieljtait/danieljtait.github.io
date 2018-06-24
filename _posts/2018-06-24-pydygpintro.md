@@ -5,7 +5,7 @@ title: "Introducing PydyGP"
 
 Generalisation remains a fundamental problem in the implementation of modern machine learning problems and in particular the problem of embedding domain dependent information in a principled fashion. This problem has inspired my interest in *hybrid models* which aim to combine the flexibility of modern machine learning with a certain amount of mechanistic structure.
 
-<img src="/assets/hybridmodelling/hybridmodelling.png" class="center" style="max-width: 400px;" />
+<img src="/assets/hybridmodelling/hybridmodelling.png" class="center" width=400px />
 
 This then is a quick announcement of the release of my package
 
