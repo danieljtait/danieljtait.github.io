@@ -1,4 +1,5 @@
 body {
+    font-family:'Helvetica', 'Arial', 'Sans-Serif';    
     margin: 60px auto;
     width: 70%;
 }
@@ -26,6 +27,16 @@ a:hover {
 
 h1 {
     font-size: 3em;
+    font-family:'Helvetica', 'Arial', 'Sans-Serif';
+}
+
+h2 {
+    font-size: 2.em;
+    font-family:'Helvetica', 'Arial', 'Sans-Serif';
+}
+
+h3 {
+    font-size: 1.5em;
     font-family:'Helvetica', 'Arial', 'Sans-Serif';
 }
 
@@ -90,5 +101,18 @@ ul.posts li {
   background-color: #f5f5f5;
 }
 
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
 
     
+code {
+    font-size: 1.5em
+}
+
+.MathJax_Display {
+    font-size: 1.5em
+}
