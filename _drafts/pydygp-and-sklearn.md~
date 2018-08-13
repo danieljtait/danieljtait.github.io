@@ -1,0 +1,5 @@
+---
+layout: post
+title: "Pydygp and Sklearn"
+---
+In an attempt to avoid reinventing the wheel and to make use of their kernel library I am gradually phasing out my own implementations `Kernel` and `GaussianProcess` class in favour of the implementations in [`sklearn.gaussian_process`](http://scikit-learn.org/stable/modules/classes.html#module-sklearn.gaussian_process). This is relatively straightforward for the successive approximation method I am implementing, but the adaptive gradient matching methods make use of the kernel derivatives, that is for a given kernel \\(k(s, t) \\) we need implementations of
