@@ -42,3 +42,15 @@ class GradientKernel(sklearn_kernels.Kernel):
 So far so simple - all of the heavy lifting is still being done by the `Kernel` class in `sklearn`. We have also begun the process of definining the multiplication between two gradient kernels objects although we still need to create the `GradientKernelProduct` class which will take two kernels and create something with the same basic functionality as a kernel. We should also probably overwrite the `__add__` method and so on otherwise this class will return nonsense, but that is left to the reader!
 
 So to turn this into something useful we are going to need to override the behaviour of `__call__`. As an example lets consider the Radial Basis Function (RBF) kernel which is parameterised in `Kernels.RBF` as
+
+$$
+k_{RBF}(\mathbf{x}, \mathbf{y} ; \ell) = \exp\left\{ -\frac{1}{2}\sum_{i=1}^D \frac{(x_i - y_i)^2}{\ell_i^2}\right\}.
+$$
+
+Then, and watching for any mistakes I may have made to keep the reader on their toes, we can calculate the gradients
+
+$$
+\begin{align}
+\frac{\partial k_{RBF}}{\partial y_j} = \frac{(x_j - y_j)}{\ell_j^2} k(\mathbf{x}, \mathbf{y} ; \ell).
+\end{align}
+$$
