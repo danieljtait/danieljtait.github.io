@@ -12,3 +12,11 @@ One challenge however for implementing these kernels in PydyGp is the use of the
 $$
 \operatorname{Cov}\left\{f(\mathbf{x}), \frac{\partial f(\mathbf{y})}{\partial y_p } \right\} = \frac{\partial k(\mathbf{x}, \mathbf{y})}{\partial y_p }, \qquad \operatorname{Cov}\left\{\frac{\partial f(\mathbf{x})}{\partial x_p}, \frac{\partial f(\mathbf{y})}{\partial y_q } \right\} = \frac{\partial^2 k(\mathbf{x}, \mathbf{y})}{\partial x_p \partial y_q },
 $$
+
+for any points $\mathbf{x}, \mathbf{y}$ in the input space. So if we are going to use the kernels in Scikit-Learn we are going to have to implement these gradients as well as the gradients of these new functions with respect to the parameters. That is we are going to need
+
+1. First and second derivatives of kernels with respect to their arguments.
+2. Gradients of these functions with respect to parameters.
+3. Implementation of `__mul__`, `__add__` etc. so we can make an algebra of these kernels
+
+This post sketches out some of the necessary details for implementing these gradient kernels, and hopefully a useful starting point for anyone who would like to contribute.
