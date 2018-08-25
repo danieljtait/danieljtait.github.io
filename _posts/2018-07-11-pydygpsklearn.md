@@ -122,3 +122,29 @@ as it stands we are trying to perform element wise multiplication of an `(N, M, 
 Kprod_dx = k1(X, Y, comp='xdx') * k2(X, Y)[..., np.newaxis] + \
            k1(X, Y)[..., np.newaxis] * k2(X, Y, comp='xdx')
 ```
+
+So now we just need to put this together inside a `GradientKernelProduct` class which shall extend the <a href="http://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Product.html">`kernels.Product`</a> of scikit-learn (which itself extends a more abstract <a href="">`KernelOperator`</a> class). Doing this we start to create something like
+
+```python
+class GradientKernelProduct(sklearn_kernels.Product):
+
+    def __call__(self, X, Y=None, eval_gradient=False, comp='x'):
+        if comp == 'x':
+            return super(GradientKernelProduct, self).__call__(X, Y, eval_gradient=eval_gradient)
+
+        elif comp == 'xdx':
+	    if eval_gradient:
+	        raise NotImplementedError
+	    else:
+	        K1 = self.k1(X, Y)
+		K1dx = self.k1(X, Y, comp='xdx')
+                K2 = self.k2(X, Y)
+                K2dx = self.k2(X, Y, comp='xdx')
+                return K1dx * K2[..., np.newaxis] + K1[..., np.newaxis] * K2dx
+
+	elif comp == 'dxdx':
+	    # returns the cov{ dfdxp, dfdxq }
+	    raise NotImplementedError("view this as an invitation")
+```
+
+So now we are getting somewhere, we still need to add the method to handle the second derivatives and the gradients with respect to kernel parameters, but by extending the base class we gain access to member functions of the parent `KernelProduct` class including utility methods for handling hyperparameters of the consitutent kernels of the product as well as methods to return flattened arrays of the (usually log transformed) hyperparameters. Returning gradients of the kernels with respect to hyperparameters is made easier because the kernels are assumed to be distinct, as an example we could add the following inside the `if eval_gradient` block
