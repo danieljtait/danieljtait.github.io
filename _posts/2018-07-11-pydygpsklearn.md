@@ -148,3 +148,34 @@ class GradientKernelProduct(sklearn_kernels.Product):
 ```
 
 So now we are getting somewhere, we still need to add the method to handle the second derivatives and the gradients with respect to kernel parameters, but by extending the base class we gain access to member functions of the parent `KernelProduct` class including utility methods for handling hyperparameters of the consitutent kernels of the product as well as methods to return flattened arrays of the (usually log transformed) hyperparameters. Returning gradients of the kernels with respect to hyperparameters is made easier because the kernels are assumed to be distinct, as an example we could add the following inside the `if eval_gradient` block
+
+```python
+class GradientKernelProduct(sklearn_kernels.Product):
+
+    def __call__(self, X, Y=None, eval_gradient=False, comp='x'):
+        if comp == 'x':
+	    ...
+      
+        elif comp == 'xdx':
+	    if eval_gradient:
+	        raise NotImplementedError
+                K1, K1_gradient = self.k1(X, Y, eval_gradient=True)
+                K1dx, K1dx_gradient = self.k1(X, Y, comp='xdx', eval_gradient=True)
+                K2, K2_gradient = self.k2(X, Y, eval_gradient=True)
+                K2dx, K2dx_gradient = self.k2(X, Y, comp='xdx', eval_gradient=True)
+
+                # gradient wrt first kernel's par
+                grad1 = K1dx_gradient * K2[..., np.newaxis, np.newaxis] + \
+                        K1_gradient[...,np.newaxis, :] * K2dx[..., np.newaxis]
+
+                # gradient wrt second kernel's par
+                grad2 = K1dx[..., np.newaxis] * K2_gradient[..., np.newaxis, :] + \
+                        K1[..., np.newaxis, np.newaxis] * K2dx_gradient
+
+                Kdx = K1dx * K2[..., np.newaxis] + K1[..., np.newaxis] * K2dx
+                Kdx_gradient = np.stack((grad1, grad2), axis=3)
+
+                return Kdx, Kdx_gradient[...,0]
+```
+
+In this block we independently consider the gradient of the first kernel and of then second and then combine them through `np.stack((grad1, grad2), axis=3)`, this is now going to be an array of shape `(N, N, D, P)` where `P` is the sum of the free parameters of the two kernels.
