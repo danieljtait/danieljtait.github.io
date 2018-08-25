@@ -92,4 +92,18 @@ $$
 \frac{\partial }{\partial y_d} k_{RBF}(\mathbf{x}, \mathbf{y} ; \ell)\bigg|_{\mathbf{x}=\mathbf{x}_i, \mathbf{y}=\mathbf{x}_j}.
 $$
 
-If we don't specify the component then the default behaviour is to ignore our additions and to implement the call method of the parent radial basis function class. Still to do then is to implement the second derivative so that call can handle the argument `k(X, Y, comp=dxdx)` which will then return the `(N, M, D, D)` Hessian array. Where `N` and `M` correspond to the number of samples of `X` and `Y` respectively, by symmetry of course there is a redundancy in returning the full Hessian so there is the option to make some small gains in speed and storage by doing this in smarter way but this is not something I have pursued - memory hasn't been a make or break factor and the computational bottleneck is usually the inversion of the full convariance matrix rather than the construction of that matrix. 
+If we don't specify the component then the default behaviour is to ignore our additions and to implement the call method of the parent radial basis function class. Still to do then is to implement the second derivative so that call can handle the argument `k(X, Y, comp=dxdx)` which will then return the `(N, M, D, D)` Hessian array. Where `N` and `M` correspond to the number of samples of `X` and `Y` respectively, by symmetry of course there is a redundancy in returning the full Hessian so there is the option to make some small gains in speed and storage by doing this in smarter way but this is not something I have pursued - memory hasn't been a make or break factor and the computational bottleneck is usually the inversion of the full convariance matrix rather than the construction of that matrix.
+
+## Products of Gradient Kernels
+
+Let us imagine we have sat down and done the work in the previous section for several kernels and now we would like to be able to freely transform these kernels to new kernels in such a way that the gradient kernel structure is still respected. That is for kernel functions \\(k_1, k_2\\) we would like to consider their product
+
+$$
+k_{prod} = k_1(x, y) \cdot k_2(x, y).
+$$
+
+Then as a gradient kernel we have
+
+$$
+\frac{\partial k_{prod}(\mathbf{x}, \mathbf{y})}{\partial y_d} = \frac{\partial k_1(\mathbf{x},\mathbf{y})}{\partial y_d} \cdot k_2(\mathbf{x}, \mathbf{y}) + k_1(\mathbf{x}, \mathbf{y})\frac{\partial k_2(\mathbf{x}, \mathbf{y})}{\partial y_d}
+$$
