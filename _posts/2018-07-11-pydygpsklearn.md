@@ -107,3 +107,18 @@ Then as a gradient kernel we have
 $$
 \frac{\partial k_{prod}(\mathbf{x}, \mathbf{y})}{\partial y_d} = \frac{\partial k_1(\mathbf{x},\mathbf{y})}{\partial y_d} \cdot k_2(\mathbf{x}, \mathbf{y}) + k_1(\mathbf{x}, \mathbf{y})\frac{\partial k_2(\mathbf{x}, \mathbf{y})}{\partial y_d}
 $$
+
+or in terms of the code something like
+
+```python
+# Non conformable array shapes
+Kprod_dx = k1(X, Y, comp='xdx') * k2(X, Y) + k1(X, Y) * k2(X, Y, comp='xdx')
+```
+
+as it stands we are trying to perform element wise multiplication of an `(N, M, D)` array with an `(N, M)` array, but this can be remedied by adding a new axis so that the array is now of shape `(N, M, 1)` and this will allow for `numpy`'s array broadcasting
+
+```python
+# This will work
+Kprod_dx = k1(X, Y, comp='xdx') * k2(X, Y)[..., np.newaxis] + \
+           k1(X, Y)[..., np.newaxis] * k2(X, Y, comp='xdx')
+```
