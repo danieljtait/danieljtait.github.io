@@ -179,3 +179,31 @@ class GradientKernelProduct(sklearn_kernels.Product):
 ```
 
 In this block we independently consider the gradient of the first kernel and of then second and then combine them through `np.stack((grad1, grad2), axis=3)`, this is now going to be an array of shape `(N, N, D, P)` where `P` is the sum of the free parameters of the two kernels.
+
+## Onwards
+
+To really get this up and running then we still need to implement the methods for the second order derivatives etc. but hopefully the above makes it pretty clear how we would go about doing that. For my application it is  enough for me to just use the kernels as they are rather than build a Gaussian process class that accepts such a kernel as an input, but an implementation of just such a Gaussian process is still something I would like to implement and so the question becomes what should the API look like? One way would be to package everything up in such a way that you could still pass everything to the standard Gaussian process class and then just use that in the usual way, but in my opinion a dedicated `MultioutputGaussianProcess` class would be a more user friendly option. Something like
+
+```python
+
+kern = RBF()
+gp = GradientGaussianProcess(kern)
+
+gp.fit(X=...,     # training inputs for f(x)
+       dX=...,    # training inputs (if any) for dfdx
+       y=...,     # training obs for f(x)
+       dydx=...)  # training obs for dfdx
+```
+
+what I am trying to convey is the possibility that we may want to fit/predict the Gaussian process using only gradient observations and so on. The `GradientGaussianProcess` would extend the more general `MultioutputGaussianProcess` which would probably have slightly clunky indexing that we may then hide behind a cleaner front end in the gradient GP class. As a for instance we might fit a model using only gradient obervations and then predict using something like
+
+```python
+gp.fit(X=None, dX=grad_inputs, y=None, dydx=grad_obs)
+
+# return the conditional mean of the GP at x in pred_inputs
+# based on the hyperpar optimisation and covar matrices
+# constructed in gp.fit
+gp.predict(X=pred_inputs, 'x|dx')
+```
+
+any thoughts I would be delighted to hear them via email or tweet.
