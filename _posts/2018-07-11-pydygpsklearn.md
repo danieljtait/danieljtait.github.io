@@ -54,3 +54,34 @@ $$
 \frac{\partial k_{RBF}}{\partial y_j} = \frac{(x_j - y_j)}{\ell_j^2} k(\mathbf{x}, \mathbf{y} ; \ell).
 \end{align}
 $$
+
+So lets try implementing this, and implementing this in a way that respects the broadcasting in `numpy`
+```python
+class RBF(GradientKernel, sklearn_kernels.RBF):
+
+    def __call__(self, X, Y=None, eval_gradient=False, comp='x'):
+        if comp == 'x':
+	    return super(RBF, self).__call__(X, Y, eval_gradient)
+
+        else:
+
+            X = np.atleast_2d(X)
+	    # see sklearn.gaussian_process.kernels for definition
+	    # of this handler function
+	    length_scale = _check_length_scale(X, self.length_scale)
+
+            if Y is None:
+	        Y = X
+
+            # array of ( pairwise subtraction of X[:, j], Y[:, j], for j=1,...,D)
+            Diffs = (X[:, np.newaxis, :] - Y[np.newaxis, :, :])
+	    K = np.exp(-.5 * np.sum(Diffs ** 2 / (length_scale ** 2), axis=2))
+
+	    if comp == 'xdx':
+
+                Kdx = (Diffs / (length_scale ** 2) ) * K[..., np.newaxis]
+		return Kdx
+
+            else:
+	        raise NotImplementedError
+```
