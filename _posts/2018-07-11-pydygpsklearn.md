@@ -20,3 +20,21 @@ for any points $\mathbf{x}, \mathbf{y}$ in the input space. So if we are going t
 3. Implementation of `__mul__`, `__add__` etc. so we can make an algebra of these kernels
 
 This post sketches out some of the necessary details for implementing these gradient kernels, and hopefully a useful starting point for anyone who would like to contribute.
+
+## A Gradient Kernel class
+
+First thing we are going to do is create a `GradientKernel` class which extends the basic functionality of `sklearn.gaussian_process.kernels.Kernel`.
+
+```python
+import sklearn.gaussian_process.kernels as sklearn_kernels
+
+class GradientKernel(sklearn_kernels.Kernel):
+    """
+    Base class for the gradient kernel.
+    """
+    def __mul__(self, b):
+        if isinstance(b, GradientKernel):
+	    return GradientKernelProduct(self, b)
+	else:
+	    raise ValueError("Multiplication must be between two GradientKernels")
+```
