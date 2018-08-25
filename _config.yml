@@ -1,4 +1,9 @@
 name: Daniel Tait
+
 markdown: kramdown
-highlighter: rouge
+
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
 github: [metadata]
