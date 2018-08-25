@@ -85,3 +85,11 @@ class RBF(GradientKernel, sklearn_kernels.RBF):
             else:
 	        raise NotImplementedError
 ```
+
+So now if `X` is a `(N, D)` array then `.__call__(X, comp='xdx')` is going to return a `(N, N, D)` array `Kdx` such that `Kdx[i, j, d]` is equal to
+
+$$
+\frac{\partial }{\partial y_d} k_{RBF}(\mathbf{x}, \mathbf{y} ; \ell)\bigg|_{\mathbf{x}=\mathbf{x}_i, \mathbf{y}=\mathbf{x}_j}.
+$$
+
+If we don't specify the component then the default behaviour is to ignore our additions and to implement the call method of the parent radial basis function class. Still to do then is to implement the second derivative so that call can handle the argument `k(X, Y, comp=dxdx)` which will then return the `(N, M, D, D)` Hessian array. Where `N` and `M` correspond to the number of samples of `X` and `Y` respectively, by symmetry of course there is a redundancy in returning the full Hessian so there is the option to make some small gains in speed and storage by doing this in smarter way but this is not something I have pursued - memory hasn't been a make or break factor and the computational bottleneck is usually the inversion of the full convariance matrix rather than the construction of that matrix. 
