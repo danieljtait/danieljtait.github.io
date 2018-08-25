@@ -38,3 +38,7 @@ class GradientKernel(sklearn_kernels.Kernel):
 	else:
 	    raise ValueError("Multiplication must be between two GradientKernels")
 ```
+
+So far so simple - all of the heavy lifting is still being done by the `Kernel` class in `sklearn`. We have also begun the process of definining the multiplication between two gradient kernels objects although we still need to create the `GradientKernelProduct` class which will take two kernels and create something with the same basic functionality as a kernel. We should also probably overwrite the `__add__` method and so on otherwise this class will return nonsense, but that is left to the reader!
+
+So to turn this into something useful we are going to need to override the behaviour of `__call__`. As an example lets consider the Radial Basis Function (RBF) kernel which is parameterised in `Kernels.RBF` as
