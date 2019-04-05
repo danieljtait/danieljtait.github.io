@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pydygp and Scikit-Learn Kernels</title>
+    <!-- link to main stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    
+    <!-- style sheet for python highlight class="syntax" -->
+    <link href="/css/syntax.css" rel="stylesheet" >
+    
+    <!-- Mathjax support -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  </head>
+  <body>
+    <nav>
+      <ul>
+	<li><a href="/">Home</a></li>
+	<li><a href="/research">Research</a></li>
+	<li><a href="/software">Software</a></li>
+	<li><a href="/about">About</a></li>
+	<li><a href="/blog">Blog</a></li>
+      </ul>
+    </nav>
+    <div class="container">
+      <h1> Pydygp and Scikit-Learn Kernels </h1>
+<p class="meta"> 11 Jul 2018</p>
+
+<div class="post">
+  <h2 id="introduction">Introduction</h2>
+
+<p>In an attempt to avoid reinventing the wheel and to make use of and existing mature kernel library I am gradually phasing out my own implementations of <code class="highlighter-rouge">Kernel</code> and <code class="highlighter-rouge">GaussianProcess</code> class in favour of the implementations in <a href="http://scikit-learn.org/stable/modules/classes.html#module-sklearn.gaussian_process"><code class="highlighter-rouge">sklearn.gaussian_process</code></a>. Not only will this hopefully mean the API is familiar to new users, but also because the kernel classes in scikit learn have a nicely implemented algebra - we can add and multiply kernels to create new kernels in a user friendly way to make complicated kernels out of simpler building blocks, and importantly the methods keep track of kernel hyperparameters and the gradient of the kernel with respect to these hyperparameters.</p>
+
+<p>One challenge however for implementing these kernels in PydyGp is the use of the gradient Gaussian processes in the adaptive gradient matching methods. It is a wonderful feature of a Gaussian process $f(\mathbf{x})$ that the gradient processes $\{ \frac{\partial }{\partial x_i} f(\mathbf{x}) \}$ are themselves Gaussian processes, the joint distribution given by</p>
+
+<script type="math/tex; mode=display">\operatorname{Cov}\left\{f(\mathbf{x}), \frac{\partial f(\mathbf{y})}{\partial y_p } \right\} = \frac{\partial k(\mathbf{x}, \mathbf{y})}{\partial y_p }, \qquad \operatorname{Cov}\left\{\frac{\partial f(\mathbf{x})}{\partial x_p}, \frac{\partial f(\mathbf{y})}{\partial y_q } \right\} = \frac{\partial^2 k(\mathbf{x}, \mathbf{y})}{\partial x_p \partial y_q },</script>
+
+<p>for any points $\mathbf{x}, \mathbf{y}$ in the input space. So if we are going to use the kernels in Scikit-Learn we are going to have to implement these gradients as well as the gradients of these new functions with respect to the parameters. That is we are going to need</p>
+
+<ol>
+  <li>First and second derivatives of kernels with respect to their arguments.</li>
+  <li>Gradients of these functions with respect to parameters.</li>
+  <li>Implementation of <code class="highlighter-rouge">__mul__</code>, <code class="highlighter-rouge">__add__</code> etc. so we can make an algebra of these kernels</li>
+</ol>
+
+<p>This post sketches out some of the necessary details for implementing these gradient kernels, and hopefully a useful starting point for anyone who would like to contribute.</p>
+
+<h2 id="a-gradient-kernel-class">A Gradient Kernel class</h2>
+
+<p>First thing we are going to do is create a <code class="highlighter-rouge">GradientKernel</code> class which extends the basic functionality of <code class="highlighter-rouge">sklearn.gaussian_process.kernels.Kernel</code>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">sklearn.gaussian_process.kernels</span> <span class="k">as</span> <span class="n">sklearn_kernels</span>
+
+<span class="k">class</span> <span class="nc">GradientKernel</span><span class="p">(</span><span class="n">sklearn_kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">):</span>
+    <span class="s">"""
+    Base class for the gradient kernel.
+    """</span>
+    <span class="k">def</span> <span class="nf">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">GradientKernel</span><span class="p">):</span>
+	    <span class="k">return</span> <span class="n">GradientKernelProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>
+	    <span class="k">raise</span> <span class="nb">ValueError</span><span class="p">(</span><span class="s">"Multiplication must be between two GradientKernels"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>So far so simple - all of the heavy lifting is still being done by the <code class="highlighter-rouge">Kernel</code> class in <code class="highlighter-rouge">sklearn</code>. We have also begun the process of definining the multiplication between two gradient kernels objects although we still need to create the <code class="highlighter-rouge">GradientKernelProduct</code> class which will take two kernels and create something with the same basic functionality as a kernel. We should also probably overwrite the <code class="highlighter-rouge">__add__</code> method and so on otherwise this class will return nonsense, but that is left to the reader!</p>
+
+<p>So to turn this into something useful we are going to need to override the behaviour of <code class="highlighter-rouge">__call__</code>. As an example lets consider the Radial Basis Function (RBF) kernel which is parameterised in <code class="highlighter-rouge">Kernels.RBF</code> as</p>
+
+<script type="math/tex; mode=display">k_{RBF}(\mathbf{x}, \mathbf{y} ; \ell) = \exp\left\{ -\frac{1}{2}\sum_{i=1}^D \frac{(x_i - y_i)^2}{\ell_i^2}\right\}.</script>
+
+<p>Then, and watching for any mistakes I may have made to keep the reader on their toes, we can calculate the gradients</p>
+
+<script type="math/tex; mode=display">\begin{align}
+\frac{\partial k_{RBF}}{\partial y_j} = \frac{(x_j - y_j)}{\ell_j^2} k(\mathbf{x}, \mathbf{y} ; \ell).
+\end{align}</script>
+
+<p>So lets try implementing this, and implementing this in a way that respects the broadcasting in <code class="highlighter-rouge">numpy</code></p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">RBF</span><span class="p">(</span><span class="n">GradientKernel</span><span class="p">,</span> <span class="n">sklearn_kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'x'</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'x'</span><span class="p">:</span>
+	    <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">RBF</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+	    <span class="c"># see sklearn.gaussian_process.kernels for definition</span>
+	    <span class="c"># of this handler function</span>
+	    <span class="n">length_scale</span> <span class="o">=</span> <span class="n">_check_length_scale</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length_scale</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+	        <span class="n">Y</span> <span class="o">=</span> <span class="n">X</span>
+
+            <span class="c"># array of ( pairwise subtraction of X[:, j], Y[:, j], for j=1,...,D)</span>
+            <span class="n">Diffs</span> <span class="o">=</span> <span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">Y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
+	    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">Diffs</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">length_scale</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+
+	    <span class="k">if</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'xdx'</span><span class="p">:</span>
+
+                <span class="n">Kdx</span> <span class="o">=</span> <span class="p">(</span><span class="n">Diffs</span> <span class="o">/</span> <span class="p">(</span><span class="n">length_scale</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="p">)</span> <span class="o">*</span> <span class="n">K</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+		<span class="k">return</span> <span class="n">Kdx</span>
+
+            <span class="k">else</span><span class="p">:</span>
+	        <span class="k">raise</span> <span class="nb">NotImplementedError</span>
+</code></pre></div></div>
+
+<p>So now if <code class="highlighter-rouge">X</code> is a <code class="highlighter-rouge">(N, D)</code> array then <code class="highlighter-rouge">.__call__(X, comp='xdx')</code> is going to return a <code class="highlighter-rouge">(N, N, D)</code> array <code class="highlighter-rouge">Kdx</code> such that <code class="highlighter-rouge">Kdx[i, j, d]</code> is equal to</p>
+
+<script type="math/tex; mode=display">\frac{\partial }{\partial y_d} k_{RBF}(\mathbf{x}, \mathbf{y} ; \ell)\bigg|_{\mathbf{x}=\mathbf{x}_i, \mathbf{y}=\mathbf{x}_j}.</script>
+
+<p>If we don’t specify the component then the default behaviour is to ignore our additions and to implement the call method of the parent radial basis function class. Still to do then is to implement the second derivative so that call can handle the argument <code class="highlighter-rouge">k(X, Y, comp=dxdx)</code> which will then return the <code class="highlighter-rouge">(N, M, D, D)</code> Hessian array. Where <code class="highlighter-rouge">N</code> and <code class="highlighter-rouge">M</code> correspond to the number of samples of <code class="highlighter-rouge">X</code> and <code class="highlighter-rouge">Y</code> respectively, by symmetry of course there is a redundancy in returning the full Hessian so there is the option to make some small gains in speed and storage by doing this in smarter way but this is not something I have pursued - memory hasn’t been a make or break factor and the computational bottleneck is usually the inversion of the full convariance matrix rather than the construction of that matrix.</p>
+
+<h2 id="products-of-gradient-kernels">Products of Gradient Kernels</h2>
+
+<p>Let us imagine we have sat down and done the work in the previous section for several kernels and now we would like to be able to freely transform these kernels to new kernels in such a way that the gradient kernel structure is still respected. That is for kernel functions \(k_1, k_2\) we would like to consider their product</p>
+
+<script type="math/tex; mode=display">k_{prod} = k_1(x, y) \cdot k_2(x, y).</script>
+
+<p>Then as a gradient kernel we have</p>
+
+<script type="math/tex; mode=display">\frac{\partial k_{prod}(\mathbf{x}, \mathbf{y})}{\partial y_d} = \frac{\partial k_1(\mathbf{x},\mathbf{y})}{\partial y_d} \cdot k_2(\mathbf{x}, \mathbf{y}) + k_1(\mathbf{x}, \mathbf{y})\frac{\partial k_2(\mathbf{x}, \mathbf{y})}{\partial y_d}</script>
+
+<p>or in terms of the code something like</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Non conformable array shapes</span>
+<span class="n">Kprod_dx</span> <span class="o">=</span> <span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">)</span> <span class="o">*</span> <span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="o">+</span> <span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="o">*</span> <span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>as it stands we are trying to perform element wise multiplication of an <code class="highlighter-rouge">(N, M, D)</code> array with an <code class="highlighter-rouge">(N, M)</code> array, but this can be remedied by adding a new axis so that the array is now of shape <code class="highlighter-rouge">(N, M, 1)</code> and this will allow for <code class="highlighter-rouge">numpy</code>’s array broadcasting</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># This will work</span>
+<span class="n">Kprod_dx</span> <span class="o">=</span> <span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">)</span> <span class="o">*</span> <span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> \
+           <span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>So now we just need to put this together inside a <code class="highlighter-rouge">GradientKernelProduct</code> class which shall extend the <a href="http://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Product.html"><code class="highlighter-rouge">kernels.Product</code></a> of scikit-learn (which itself extends a more abstract <a href=""><code class="highlighter-rouge">KernelOperator</code></a> class). Doing this we start to create something like</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">GradientKernelProduct</span><span class="p">(</span><span class="n">sklearn_kernels</span><span class="o">.</span><span class="n">Product</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'x'</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'x'</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">GradientKernelProduct</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="n">eval_gradient</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'xdx'</span><span class="p">:</span>
+	    <span class="k">if</span> <span class="n">eval_gradient</span><span class="p">:</span>
+	        <span class="k">raise</span> <span class="nb">NotImplementedError</span>
+	    <span class="k">else</span><span class="p">:</span>
+	        <span class="n">K1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+		<span class="n">K1dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">)</span>
+                <span class="n">K2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+                <span class="n">K2dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">K1dx</span> <span class="o">*</span> <span class="n">K2</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">K1</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">K2dx</span>
+
+	<span class="k">elif</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'dxdx'</span><span class="p">:</span>
+	    <span class="c"># returns the cov{ dfdxp, dfdxq }</span>
+	    <span class="k">raise</span> <span class="nb">NotImplementedError</span><span class="p">(</span><span class="s">"view this as an invitation"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>So now we are getting somewhere, we still need to add the method to handle the second derivatives and the gradients with respect to kernel parameters, but by extending the base class we gain access to member functions of the parent <code class="highlighter-rouge">KernelProduct</code> class including utility methods for handling hyperparameters of the consitutent kernels of the product as well as methods to return flattened arrays of the (usually log transformed) hyperparameters. Returning gradients of the kernels with respect to hyperparameters is made easier because the kernels are assumed to be distinct, as an example we could add the following inside the <code class="highlighter-rouge">if eval_gradient</code> block</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">GradientKernelProduct</span><span class="p">(</span><span class="n">sklearn_kernels</span><span class="o">.</span><span class="n">Product</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'x'</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'x'</span><span class="p">:</span>
+	    <span class="o">...</span>
+      
+        <span class="k">elif</span> <span class="n">comp</span> <span class="o">==</span> <span class="s">'xdx'</span><span class="p">:</span>
+	    <span class="k">if</span> <span class="n">eval_gradient</span><span class="p">:</span>
+	        <span class="k">raise</span> <span class="nb">NotImplementedError</span>
+                <span class="n">K1</span><span class="p">,</span> <span class="n">K1_gradient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">K1dx</span><span class="p">,</span> <span class="n">K1dx_gradient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k1</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">K2</span><span class="p">,</span> <span class="n">K2_gradient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">K2dx</span><span class="p">,</span> <span class="n">K2dx_gradient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">k2</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">comp</span><span class="o">=</span><span class="s">'xdx'</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+                <span class="c"># gradient wrt first kernel's par</span>
+                <span class="n">grad1</span> <span class="o">=</span> <span class="n">K1dx_gradient</span> <span class="o">*</span> <span class="n">K2</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> \
+                        <span class="n">K1_gradient</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">K2dx</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+                <span class="c"># gradient wrt second kernel's par</span>
+                <span class="n">grad2</span> <span class="o">=</span> <span class="n">K1dx</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">K2_gradient</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> \
+                        <span class="n">K1</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">K2dx_gradient</span>
+
+                <span class="n">Kdx</span> <span class="o">=</span> <span class="n">K1dx</span> <span class="o">*</span> <span class="n">K2</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">K1</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">*</span> <span class="n">K2dx</span>
+                <span class="n">Kdx_gradient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">grad1</span><span class="p">,</span> <span class="n">grad2</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">Kdx</span><span class="p">,</span> <span class="n">Kdx_gradient</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>In this block we independently consider the gradient of the first kernel and of then second and then combine them through <code class="highlighter-rouge">np.stack((grad1, grad2), axis=3)</code>, this is now going to be an array of shape <code class="highlighter-rouge">(N, N, D, P)</code> where <code class="highlighter-rouge">P</code> is the sum of the free parameters of the two kernels.</p>
+
+<h2 id="onwards">Onwards</h2>
+
+<p>To really get this up and running then we still need to implement the methods for the second order derivatives etc. but hopefully the above makes it pretty clear how we would go about doing that. For my application it is  enough for me to just use the kernels as they are rather than build a Gaussian process class that accepts such a kernel as an input, but an implementation of just such a Gaussian process is still something I would like to implement and so the question becomes what should the API look like? One way would be to package everything up in such a way that you could still pass everything to the standard Gaussian process class and then just use that in the usual way, but in my opinion a dedicated <code class="highlighter-rouge">MultioutputGaussianProcess</code> class would be a more user friendly option. Something like</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="n">kern</span> <span class="o">=</span> <span class="n">RBF</span><span class="p">()</span>
+<span class="n">gp</span> <span class="o">=</span> <span class="n">GradientGaussianProcess</span><span class="p">(</span><span class="n">kern</span><span class="p">)</span>
+
+<span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=...</span><span class="p">,</span>     <span class="c"># training inputs for f(x)</span>
+       <span class="n">dX</span><span class="o">=...</span><span class="p">,</span>    <span class="c"># training inputs (if any) for dfdx</span>
+       <span class="n">y</span><span class="o">=...</span><span class="p">,</span>     <span class="c"># training obs for f(x)</span>
+       <span class="n">dydx</span><span class="o">=...</span><span class="p">)</span>  <span class="c"># training obs for dfdx</span>
+</code></pre></div></div>
+
+<p>what I am trying to convey is the possibility that we may want to fit/predict the Gaussian process using only gradient observations and so on. The <code class="highlighter-rouge">GradientGaussianProcess</code> would extend the more general <code class="highlighter-rouge">MultioutputGaussianProcess</code> which would probably have slightly clunky indexing that we may then hide behind a cleaner front end in the gradient GP class. As a for instance we might fit a model using only gradient obervations and then predict using something like</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dX</span><span class="o">=</span><span class="n">grad_inputs</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dydx</span><span class="o">=</span><span class="n">grad_obs</span><span class="p">)</span>
+
+<span class="c"># return the conditional mean of the GP at x in pred_inputs</span>
+<span class="c"># based on the hyperpar optimisation and covar matrices</span>
+<span class="c"># constructed in gp.fit</span>
+<span class="n">gp</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">pred_inputs</span><span class="p">,</span> <span class="s">'x|dx'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>any thoughts I would be delighted to hear them via email or tweet.</p>
+
+</div>
+
+    </div><!-- ./containter -->
+    <footer>
+      <ul>
+	<li><a href="https://github.com/danieljtait">github.com/danieljtait</a></li>
+    </footer>
+  </body>
+</html>

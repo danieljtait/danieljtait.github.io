@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Introducing PydyGp</title>
+    <!-- link to main stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    
+    <!-- style sheet for python highlight class="syntax" -->
+    <link href="/css/syntax.css" rel="stylesheet" >
+    
+    <!-- Mathjax support -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  </head>
+  <body>
+    <nav>
+      <ul>
+	<li><a href="/">Home</a></li>
+	<li><a href="/research">Research</a></li>
+	<li><a href="/software">Software</a></li>
+	<li><a href="/about">About</a></li>
+	<li><a href="/blog">Blog</a></li>
+      </ul>
+    </nav>
+    <div class="container">
+      <h1> Introducing PydyGp </h1>
+<p class="meta"> 24 Jun 2018</p>
+
+<div class="post">
+  <p>Generalisation remains a fundamental problem in the implementation of modern machine learning techniques and in particular the problem of embedding domain dependent information in a principled fashion. This problem has inspired my interest in <em>hybrid models</em> which aim to combine the flexibility of modern machine learning with the ability to embed a certain amount of mechanistic structure at the modelling stage.</p>
+
+<p><img src="/assets/hybridmodelling/hybridmodelling.png" class="center" /></p>
+
+<p>This then is a quick announcement of the release of my package</p>
+
+<blockquote>
+  <p><code class="highlighter-rouge">PydyGP</code>: a <strong>Py</strong>thon package for <strong>Dy</strong>namic systems with
+latent <strong>G</strong>aussian <strong>P</strong>rocesses</p>
+</blockquote>
+
+<p>The aim is to provide a usable and robust implementation of a class of hybrid machine-learning methods for systems with time dependent features by combining simple dynamic equations with flexible Gaussian processes in an attempt to achieve the best of both worlds. While I am still in the process of releasing the full code from my hard drive in to the light over on <a href="https://github.com/danieljtait/pydygp">github</a> it has got to the point where there is now enough code moved across to be of interest to a larger audience.</p>
+
+<h2 id="where-can-i-find-pydygp">Where can I find <code class="highlighter-rouge">pydygp</code>?</h2>
+
+<p>The package is hosted over on <a href="https://pypi.org/project/pydygp/">PyPi</a> and so should be installable with</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip install pydygp
+</code></pre></div></div>
+
+<p>However in the short term the package is likely to grow quite rapidly and so cloning the the repository on github is probably advisable.</p>
+
+<h2 id="features">Features</h2>
+<p>As a near term goal I will be primarily focused on:</p>
+
+<ul>
+  <li><strong>(Additive) Linear latent force models</strong>: These models are described in <a href="#ref1">[1]</a>, they combine simple linear ODEs with a flexible Gaussian process term</li>
+</ul>
+
+<script type="math/tex; mode=display">\begin{align}
+  \dot{\mathbf{x}}(t) = \mathbf{A}\mathbf{x}(t) + \mathbf{S}\mathbf{g}(t),
+\end{align}</script>
+
+<ul>
+  <li><strong>Multiplicative latent force models</strong>: This is an extension of the latent force model to allow interactions between the state variables and the latent forces</li>
+</ul>
+
+<script type="math/tex; mode=display">\begin{align}
+  \dot{\mathbf{x}}(t) = \left(\mathbf{A}_0 + \mathbf{A}_r g_r(t) \right)\mathbf{x}(t)
+\end{align}</script>
+
+<p>Where in both cases $\mathbf{g}$ and ${ g_r }$ represent latent Gaussian processes.</p>
+
+<p>One approach to fitting the second class of models is the adaptive gradient matching methods introduced in <a href="#ref2">[2]</a> and so at a future date I may adapt the existing code to handle the Metropolis-Hastings fitting of more general nonlinear ODE models using the adaptive gradient approach. However is worth noting that these models are philisophically quite different, often being very well specified mechanistic models with a small set of random parameters, and unlike the two evolution equations introduced above where the GP forces <em>drive</em> the equation, the use of the GP terms in the adaptive gradient matching approach is as an interpolater of the latent states used to avoid the explicit solution of the ODE.</p>
+
+<h2 id="further-info">Further Info</h2>
+<p>I will be continuously updating the <a href="https://pydygp.readthedocs.io/en/latest/">documentation</a> and in particular would point interested parties in the direction of the <a href="https://pydygp.readthedocs.io/en/latest/user/index.html">user guide</a> and examples contained within.</p>
+
+<h2 id="contribution">Contribution</h2>
+<p>The project is very much in its infancy but if you are interested in contributing anything from documentation, tutorials and examples or any relevant modules do get in touch at &lt;<code class="highlighter-rouge"><span class="k">package</span> <span class="n">name</span></code>&gt;<code class="highlighter-rouge">@gmail.com</code>.</p>
+
+<h2 id="references">References</h2>
+
+<ol>
+  <li><a name="ref1"></a>Dondelinger F, Filippone M, Rogers S, Husmeier D <em>ODE parameter inference using adaptive gradient matching with Gaussian processes</em></li>
+  <li><a name="ref2"></a>Alvarez M, Luengo D, Lawrence N <em>Latent Force Models</em>, PMLR 5:9–16, 2009</li>
+</ol>
+
+</div>
+
+    </div><!-- ./containter -->
+    <footer>
+      <ul>
+	<li><a href="https://github.com/danieljtait">github.com/danieljtait</a></li>
+    </footer>
+  </body>
+</html>

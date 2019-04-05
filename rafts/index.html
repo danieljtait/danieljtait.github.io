@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Daniel Tait</title>
+    <!-- link to main stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/home.css">
+    
+    <!-- style sheet for python highlight class="syntax" -->
+    <link href="/css/syntax.css" rel="stylesheet" >
+    
+    <!-- Mathjax support -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  </head>
+  <body>
+    <nav>
+      <ul>
+	<li><a href="/">Home</a></li>
+	<li><a href="/research">Research</a></li>
+	<li><a href="/software">Software</a></li>
+	<li><a href="/about">About</a></li>
+	<li><a href="/blog">Blog</a></li>
+      </ul>
+    </nav>
+    <div class="container">
+      <div class="blurb">
+  <h1>Daniel Tait</h1>
+</div><!-- /.blurb -->
+
+<div class="w3-content w3-display-container">
+  <img class="mySlides" src="/assets/lfm.svg" style="width:100%">
+</div>
+
+<script>
+var slideIndex = 1;
+showDivs(slideIndex);
+
+function plusDivs(n) {
+  showDivs(slideIndex += n);
+}
+
+function currentDiv(n) {
+  showDivs(slideIndex = n);
+}
+
+function showDivs(n) {
+  var i;
+  var x = document.getElementsByClassName("mySlides");
+  var dots = document.getElementsByClassName("demo");
+  if (n > x.length) {slideIndex = 1}
+  if (n < 1) {slideIndex = x.length}
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";  
+  }
+  for (i = 0; i < dots.length; i++) {
+    dots[i].className = dots[i].className.replace(" w3-white", "");
+  }
+  x[slideIndex-1].style.display = "block";  
+  dots[slideIndex-1].className += " w3-white";
+}
+</script>
+
+    </div><!-- ./containter -->
+    <footer>
+      <ul>
+	<li><a href="https://github.com/danieljtait">github.com/danieljtait</a></li>
+    </footer>
+  </body>
+</html>

@@ -1,19 +1,47 @@
 ---
-layout: default
+layout: home
 title: Daniel Tait
 ---
 <div class="blurb">
   <h1>Daniel Tait</h1>
-  <h2>
-    <a href="https://pydygp.readthedocs.io/en/latest/">PydyGP</a>
-  </h2>
-  <p>
-    A <b>Py</b>thon package for <b>dy</b>namic systems driven by latent <b>G</b>aussian <b>P</b>rocesses.
-  </p>
-  <p>
-    <h2>Multiplicative Latent Force Models</h2>
-    <a target="_blank" href="/assets/isbaposter.pdf">
-       <img src="/assets/isba_poster_thumb.png" alt="ISBA Poster" class="thumbnail" width=200px >
-    </a>
-  </p>
 </div><!-- /.blurb -->
+
+<!--<img class="mySlides" src="/assets/lfm.svg" style="width:100%"> -->
+<div class="bgimg">
+  <img class="mySlides" src="/assets/lfm.svg">
+  <div class="caption">
+    <span class="caption"><a
+	href="research/index.html"
+	class="caption"> Latent Force Models </a>
+    </span>
+  </div>
+</div>
+
+<script>
+var slideIndex = 1;
+showDivs(slideIndex);
+
+function plusDivs(n) {
+  showDivs(slideIndex += n);
+}
+
+function currentDiv(n) {
+  showDivs(slideIndex = n);
+}
+
+function showDivs(n) {
+  var i;
+  var x = document.getElementsByClassName("mySlides");
+  var dots = document.getElementsByClassName("demo");
+  if (n > x.length) {slideIndex = 1}
+  if (n < 1) {slideIndex = x.length}
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";  
+  }
+  for (i = 0; i < dots.length; i++) {
+    dots[i].className = dots[i].className.replace(" w3-white", "");
+  }
+  x[slideIndex-1].style.display = "block";  
+  dots[slideIndex-1].className += " w3-white";
+}
+</script>

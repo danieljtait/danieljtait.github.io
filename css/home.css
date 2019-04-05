@@ -1,0 +1,54 @@
+body {
+    font-family: 'Helvetica', 'Arial', 'Sans-Serif';
+    margin: 60px auto;
+    width: 70%;
+}
+
+nav ul, footer ul {
+    font-family:'Helvetica', 'Arial', 'Sans-Serif';
+    padding: 0px;
+    list-style: none;
+    font-weight: bold;
+}
+
+nav ul li, footer ul li {
+    display: inline;
+    margin-right: 20px;
+}
+
+a {
+    text-decoration: none;
+    color: #999;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.bgimg {
+    padding: 10px;
+}
+
+img.mySlides {
+    width: 100%;
+}
+
+.caption {
+    padding: 10px;
+}
+
+span.caption {
+    background: black;
+    color: white;
+}
+
+a.caption {
+    color: white;
+}
+
+bgimg.caption {
+    right: 0;
+    top: 0;
+}
+
+.w3-display-topright{position:absolute;right:0;top:0}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sklearn Priors</title>
+    <!-- link to main stylesheet -->
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    
+    <!-- style sheet for python highlight class="syntax" -->
+    <link href="/css/syntax.css" rel="stylesheet" >
+    
+    <!-- Mathjax support -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+    </script>
+    
+    <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+
+  </head>
+  <body>
+    <nav>
+      <ul>
+	<li><a href="/">Home</a></li>
+	<li><a href="/research">Research</a></li>
+	<li><a href="/software">Software</a></li>
+	<li><a href="/about">About</a></li>
+	<li><a href="/blog">Blog</a></li>
+      </ul>
+    </nav>
+    <div class="container">
+      <h1> Sklearn Priors </h1>
+<p class="meta"> 03 Jan 2019</p>
+
+<div class="post">
+  <p>The plan in this short note is to briefly consider how we might go about
+extending the <code class="highlighter-rouge">GaussianProcessRegressor</code> class in the <a href="&quot;&quot;">sci-kit learn module</a>
+to easy allow us to perform Gaussian process regression while specifying a prior.</p>
+
+<p>First it is worth demonstrating that it is relatively simple to construct an example
+of a Gaussian process for which the <code class="highlighter-rouge">maximum likelihood</code> value of the kernel
+hyperparameter collapses to an uninteresting degerate limit</p>
+
+<h2 id="kernel-with-prior">Kernel with Prior</h2>
+<p>First step is to</p>
+
+<p>Extending the GaussianProcessRegressor</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">GaussianProcessRegress</span><span class="p">(</span>
+    <span class="n">sklearn</span><span class="o">.</span><span class="n">gaussian_process</span><span class="o">.</span><span class="n">GaussianProcessRegressor</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="s">'theta_prior'</span><span class="p">):</span>
+
+	    <span class="k">if</span> <span class="n">eval_gradient</span><span class="p">:</span>
+	        <span class="n">ll</span><span class="p">,</span> <span class="n">ll_grad</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">()</span>
+		<span class="n">lp</span><span class="p">,</span> <span class="n">lp_grad</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">ll</span> <span class="o">+</span> <span class="n">lp</span><span class="p">,</span> <span class="n">ll_grad</span> <span class="o">+</span> <span class="n">lp_grad</span>
+
+	    <span class="k">else</span><span class="p">:</span>
+	        <span class="n">ll</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">()</span>
+		<span class="n">lp</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">ll</span> <span class="o">+</span> <span class="n">lp</span>
+        <span class="k">else</span><span class="p">:</span>
+	    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">eval_gradient</span><span class="p">)</span>
+</code></pre></div></div>
+
+</div>
+
+    </div><!-- ./containter -->
+    <footer>
+      <ul>
+	<li><a href="https://github.com/danieljtait">github.com/danieljtait</a></li>
+    </footer>
+  </body>
+</html>
