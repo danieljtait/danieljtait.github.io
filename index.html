@@ -7,7 +7,7 @@ title: Daniel Tait
 </div><!-- /.blurb -->
 
 <!--<img class="mySlides" src="/assets/lfm.svg" style="width:100%"> -->
-<div class="bgimg">
+<!-- <div class="bgimg">
   <img class="mySlides" src="/assets/lfm.svg">
   <div class="caption">
     <span class="caption"><a
@@ -15,6 +15,36 @@ title: Daniel Tait
 	class="caption"> Latent Force Models </a>
     </span>
   </div>
+</div>
+-->
+
+<div class="w3-container">
+
+  <div class="w3-content w3-display-container">
+    <div class="w3-display-container mySlides">
+      <img src="/assets/lfm.svg">
+      <div class="caption">
+        <span class="caption"><a
+        href="research/index.html"
+        class="caption"> Latent Force Models </a>
+        </span>
+      </div>
+    </div>
+
+    <div class="w3-display-container mySlides">
+      <img src="/assets/cvi.png">
+      <div class="caption">
+        <span class="caption"><a
+        href="research/index.html"
+        class="caption"> Constrained Variational Inference </a>
+        </span>
+      </div>
+    </div>
+
+    <button class="w3-button w3-display-left w3-black" onclick="plusDivs(-1)">&#10094;</button>
+    <button class="w3-button w3-display-right w3-black" onclick="plusDivs(1)">&#10095;</button>
+  </div>
+
 </div>
 
 <script>
@@ -36,12 +66,12 @@ function showDivs(n) {
   if (n > x.length) {slideIndex = 1}
   if (n < 1) {slideIndex = x.length}
   for (i = 0; i < x.length; i++) {
-    x[i].style.display = "none";  
+    x[i].style.display = "none";
   }
   for (i = 0; i < dots.length; i++) {
     dots[i].className = dots[i].className.replace(" w3-white", "");
   }
-  x[slideIndex-1].style.display = "block";  
+  x[slideIndex-1].style.display = "block";
   dots[slideIndex-1].className += " w3-white";
 }
 </script>
